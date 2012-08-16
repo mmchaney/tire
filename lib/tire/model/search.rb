@@ -300,7 +300,7 @@ module Tire
         Results::Item.send :include, Loader
       end
 
-      
+
     end
 
   end

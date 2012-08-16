@@ -14,9 +14,18 @@ module Tire
           @indices = Array(indices)
         end
         @types   = Array(options.delete(:type)).map { |type| Utils.escape(type) }
+        @id      = options.delete(:id)
         @options = options
 
-        @path    = ['/', @indices.join(','), @types.join(','), '_search'].compact.join('/').squeeze('/')
+        @use_mlt = @options.delete(:mlt) || false
+
+        ##
+        # using the more like this api with search capabilities.
+        if @use_mlt
+          @path    = ['/', @indices.join(','), @types.join(','), @id, '_mlt'].compact.join('/').squeeze('/')
+        else
+          @path    = ['/', @indices.join(','), @types.join(','), '_search'].compact.join('/').squeeze('/')
+        end
 
         block.arity < 1 ? instance_eval(&block) : block.call(self) if block_given?
       end
@@ -137,7 +146,7 @@ module Tire
         @options.delete(:payload) || begin
           request = {}
           request.update( { :indices_boost => @indices_boost } ) if @indices_boost
-          request.update( { :query  => @query.to_hash } )    if @query
+          request.update( { :query  => @query.to_hash } )    if @query && !@use_mlt
           request.update( { :sort   => @sort.to_ary   } )    if @sort
           request.update( { :facets => @facets.to_hash } )   if @facets
           request.update( { :filter => @filters.first.to_hash } ) if @filters && @filters.size == 1
